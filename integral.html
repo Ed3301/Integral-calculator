@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>Integral</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	
+	<style>
+		label {
+			font-size: 28px;
+		}
+    input, select {
+      margin-left: 15%;
+    }
+    button {
+      margin-top: 49px;
+    }
+	</style>
+	</head>
+<body>
+  <h1 style="text-align: center; margin-bottom: 20px">Calculating the integration of function</h1>
+  <div class="main text-center" style="text-align: center">
+    <div style="margin: 10px" class="text-center">
+      <div class="row justify-content-center">
+        <div class="col-4">
+          <div class="form-group">
+            <label for="input2">Given Function</label>
+            <input style="width: 300px;" type="text" id="input0" name="lowerBound" class="form-control" placeholder="Input the given function">
+          </div>
+          <div class="form-group">
+            <label for="method">Integration Method</label>
+            <select class="form-control" style="width: 300px;" id="method">
+              <option value="0">Rectangle's method</option>
+              <option value="1">Table's method</option>
+              <option value="2">Simpson's method</option>
+            </select>
+          </div>
+           <div>
+            <button class="btn btn-primary" onclick="calculate()">Calculate</button>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="form-group">
+            <label for="input1">Number of dots</label>
+            <input style="width: 300px;" type="text" id="input1" name="calculationCount" class="form-control" placeholder="How many times it will be sum">
+          </div>
+          <div class="form-group">
+            <label for="input2">Lower integration bound</label>
+            <input style="width: 300px;" type="text" id="input2" name="lowerBound" class="form-control" placeholder="Lower integration bound">
+          </div>
+          <div class="form-group">
+            <label for="input3">Higher integration bound</label>
+            <input style="width: 300px;" type="text" id="input3" name="upperBound" class="form-control" placeholder="Upper integration Bound">
+          </div>
+        </div>
+      </div>
+    </div>
+    <h3 style="margin: 10px">Grapgic of the function</h3>
+    <div style="margin: 10px;">
+      <canvas id="canvas" style="height: 300px; width: 1000px; border: 2px solid black"></canvas>
+    </div>
+	<div id="result" style="margin: 10px; font-size: 28px"></div>
+  </div>
+  <script>
+
+   /////////////////// GLOBAL VARIABLES ///////////////////// 
+
+   var axes={}, ctx=canvas.getContext("2d");
+   axes.x0 = .5 + .5*canvas.width;  // x0 pixels from left to x=0
+   axes.y0 = .5 + .5*canvas.height; // y0 pixels from top to y=0
+   axes.scale = 50;                 // 40 pixels from x=0 to x=1
+   axes.doNegativeX = true;
+   let func = '';
+
+   //////////////////// HELPER FUNCTIONS ///////////////////
+
+
+   // Main calculation function
+  function calculate() {
+    let n = document.getElementById('input1').value;
+    let a = document.getElementById('input2').value;
+    let b = document.getElementById('input3').value;
+    let method = document.getElementById('method').value;
+    let result = 0;
+
+    func = document.getElementById('input0').value;
+
+    if(method == 0) {
+      result = rectangleMethod(a, b, n);
+    } else if (method == 1) {
+      result = tableMethod(a, b, n);
+    } else {
+      result = simpsonMethod(a, b, n);
+    }
+
+    document.getElementById('result').innerHTML = 'The result is: ' + result.toFixed(4);
+
+    draw();
+  }
+
+   // Given function from input
+   function f(x) { 
+    return eval(func);  
+  }
+
+   // Functions for draw the graphic
+   function draw() {
+     var canvas = document.getElementById("canvas");
+     if (null==canvas || !canvas.getContext) return;
+
+     showAxes(ctx,axes);
+     funGraph(ctx,axes,f,"rgb(255,0,0)",0.1);
+   }
+
+   function funGraph (ctx,axes,func,color,thick) {
+     var xx, yy, dx=4, x0=axes.x0, y0=axes.y0, scale=axes.scale;
+     var iMax = Math.round((ctx.canvas.width-x0)/dx);
+     var iMin = axes.doNegativeX ? Math.round(-x0/dx) : 0;
+     ctx.beginPath();
+     ctx.lineWidth = thick;
+     ctx.strokeStyle = color;
+	   let i = iMin;
+	 
+  	 setInterval(function() {
+  		 if(i <= iMax) {
+  		   xx = dx*i; yy = scale*func(xx/scale);
+  		   if (i==iMin) ctx.moveTo(x0+xx,y0-yy);
+  		   else         ctx.lineTo(x0+xx,y0-yy);
+
+  			ctx.stroke();
+  			i++;
+  		 }
+  	 }, 50);
+   }
+
+   function showAxes(ctx,axes) {
+     var x0=axes.x0, w=ctx.canvas.width;
+     var y0=axes.y0, h=ctx.canvas.height;
+     var xmin = axes.doNegativeX ? 0 : x0;
+     ctx.beginPath();
+     ctx.strokeStyle = "rgb(128,128,128)";
+     ctx.moveTo(xmin,y0); ctx.lineTo(w,y0);  // X axis
+     ctx.moveTo(x0,0);    ctx.lineTo(x0,h);  // Y axis
+     ctx.stroke();
+   }
+
+   // Integration calculation 3 methods
+   function rectangleMethod(a, b, n) {
+        let area = 0;
+        let dx = (b - a) / n;
+        for (let x = 0; x < n; x++) {
+            area += f(a + dx * (x + 0.5));
+        }
+        area *= dx;
+        return area;
+    }
+
+    function tableMethod(a, b, n) {
+        let s = f(a) + f(b);
+        let dx = (b - a) / n;
+        for(let x=1; x < n; x++) {
+            s += 2 * f(a + x * dx);
+        }
+        let result = (dx/2) * s;
+        return result;
+    }
+
+    function simpsonMethod(a, b, n) {
+        let s = 0;
+        let dx = (b - a) / n;
+        let arr1 = [];
+        let arr2 = [];
+        for (let j = 0; j <= n; j++) {
+            arr1[j] = a + j * dx;
+            arr2[j] = f(arr1[j]);
+        }
+
+        for(let x=0; x < n ; x++) {
+            if (x === 0 || x === n)
+                s += arr2[x];
+            else if (x % 2 != 0)
+                s += 4 * arr2[x];
+            else
+                s += 2 * arr2[x];
+        }
+
+        var result = (dx / 3) * s;
+        return result;
+    }
+
+  </script>
+</body>
+</html>
